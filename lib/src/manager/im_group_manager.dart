@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_openim_sdk/flutter_openim_sdk.dart';
+import 'package:flutter_openim_sdk/src/macos_openim_bridge.dart';
 
 class GroupManager {
   MethodChannel _channel;
@@ -12,6 +13,9 @@ class GroupManager {
   /// Group relationship listener
   Future setGroupListener(OnGroupListener listener) {
     this.listener = listener;
+    if (MacOSOpenIMBridge.instance.isSupported) {
+      return MacOSOpenIMBridge.instance.call('setGroupListener', {});
+    }
     return _channel.invokeMethod('setGroupListener', _buildParam({}));
   }
 
@@ -23,15 +27,14 @@ class GroupManager {
     required List<String> userIDList,
     String? reason,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'inviteUserToGroup',
-          _buildParam({
-            'groupID': groupID,
-            'userIDList': userIDList,
-            'reason': reason,
-            "operationID": Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('inviteUserToGroup', {
+      'groupID': groupID,
+      'userIDList': userIDList,
+      'reason': reason,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Remove group members
   /// [groupID] Group ID
@@ -42,15 +45,14 @@ class GroupManager {
     required List<String> userIDList,
     String? reason,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'kickGroupMember',
-          _buildParam({
-            'groupID': groupID,
-            'userIDList': userIDList,
-            'reason': reason,
-            "operationID": Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('kickGroupMember', {
+      'groupID': groupID,
+      'userIDList': userIDList,
+      'reason': reason,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Query group member information
   /// [groupID] Group ID
@@ -59,16 +61,19 @@ class GroupManager {
     required String groupID,
     required List<String> userIDList,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getGroupMembersInfo',
-              _buildParam({
-                'groupID': groupID,
-                'userIDList': userIDList,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)));
+  }) {
+    final params = {
+      'groupID': groupID,
+      'userIDList': userIDList,
+      "operationID": Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getGroupMembersInfo', params)
+        : _channel.invokeMethod('getGroupMembersInfo', _buildParam(params));
+    return future.then(
+      (value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)),
+    );
+  }
 
   /// Paginate and retrieve the group member list
   /// [groupID] Group ID
@@ -81,18 +86,21 @@ class GroupManager {
     int offset = 0,
     int count = 0,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getGroupMemberList',
-              _buildParam({
-                'groupID': groupID,
-                'filter': filter,
-                'offset': offset,
-                'count': count,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)));
+  }) {
+    final params = {
+      'groupID': groupID,
+      'filter': filter,
+      'offset': offset,
+      'count': count,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getGroupMemberList', params)
+        : _channel.invokeMethod('getGroupMemberList', _buildParam(params));
+    return future.then(
+      (value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)),
+    );
+  }
 
   /// Paginate and retrieve the group member list as a map
   /// [groupID] Group ID
@@ -105,63 +113,70 @@ class GroupManager {
     int offset = 0,
     int count = 0,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getGroupMemberList',
-              _buildParam({
-                'groupID': groupID,
-                'filter': filter,
-                'offset': offset,
-                'count': count,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toListMap(value));
+  }) {
+    final params = {
+      'groupID': groupID,
+      'filter': filter,
+      'offset': offset,
+      'count': count,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getGroupMemberList', params)
+        : _channel.invokeMethod('getGroupMemberList', _buildParam(params));
+    return future.then((value) => Utils.toListMap(value));
+  }
 
   /// Query the list of joined groups
-  Future<List<GroupInfo>> getJoinedGroupList({String? operationID}) => _channel
-      .invokeMethod(
-          'getJoinedGroupList',
-          _buildParam({
-            'operationID': Utils.checkOperationID(operationID),
-          }))
-      .then((value) => Utils.toList(value, (map) => GroupInfo.fromJson(map)));
+  Future<List<GroupInfo>> getJoinedGroupList({String? operationID}) {
+    final params = {'operationID': Utils.checkOperationID(operationID)};
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getJoinedGroupList', params)
+        : _channel.invokeMethod('getJoinedGroupList', _buildParam(params));
+    return future.then(
+      (value) => Utils.toList(value, (map) => GroupInfo.fromJson(map)),
+    );
+  }
 
   Future<List<GroupInfo>> getJoinedGroupListPage(
-          {String? operationID, int offset = 0, int count = 40}) =>
-      _channel
-          .invokeMethod(
-              'getJoinedGroupListPage',
-              _buildParam({
-                'offset': offset,
-                'count': count,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toList(value, (map) => GroupInfo.fromJson(map)));
+      {String? operationID, int offset = 0, int count = 40}) {
+    final params = {
+      'offset': offset,
+      'count': count,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getJoinedGroupListPage', params)
+        : _channel.invokeMethod('getJoinedGroupListPage', _buildParam(params));
+    return future.then(
+      (value) => Utils.toList(value, (map) => GroupInfo.fromJson(map)),
+    );
+  }
 
   /// Query the list of joined groups
-  Future<List<dynamic>> getJoinedGroupListMap({String? operationID}) => _channel
-      .invokeMethod(
-          'getJoinedGroupList',
-          _buildParam({
-            'operationID': Utils.checkOperationID(operationID),
-          }))
-      .then((value) => Utils.toListMap(value));
+  Future<List<dynamic>> getJoinedGroupListMap({String? operationID}) {
+    final params = {'operationID': Utils.checkOperationID(operationID)};
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getJoinedGroupList', params)
+        : _channel.invokeMethod('getJoinedGroupList', _buildParam(params));
+    return future.then((value) => Utils.toListMap(value));
+  }
 
   /// Check if the user has joined a group
   /// [groupID] Group ID
   Future<bool> isJoinedGroup({
     required String groupID,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'isJoinGroup',
-              _buildParam({
-                'groupID': groupID,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => value == 'true' ? true : false);
+  }) {
+    final params = {
+      'groupID': groupID,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('isJoinGroup', params)
+        : _channel.invokeMethod('isJoinGroup', _buildParam(params));
+    return future.then((value) => value == true || value == 'true');
+  }
 
   /// Create a new group
   /// [groupInfo] Group information
@@ -174,74 +189,74 @@ class GroupManager {
     List<String> adminUserIDs = const [],
     String? ownerUserID,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createGroup',
-              _buildParam({
-                'groupInfo': groupInfo.toJson(),
-                'memberUserIDs': memberUserIDs,
-                'adminUserIDs': adminUserIDs,
-                'ownerUserID': ownerUserID,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => GroupInfo.fromJson(map)));
+  }) {
+    final future = _invoke('createGroup', {
+      'groupInfo': groupInfo.toJson(),
+      'memberUserIDs': memberUserIDs,
+      'adminUserIDs': adminUserIDs,
+      'ownerUserID': ownerUserID,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+    return future.then(
+      (value) => Utils.toObj(value, (map) => GroupInfo.fromJson(map)),
+    );
+  }
 
   /// Edit group information
   Future<dynamic> setGroupInfo(
     GroupInfo groupInfo, {
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'setGroupInfo',
-          _buildParam({
-            'groupInfo': groupInfo.toJson(),
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('setGroupInfo', {
+      'groupInfo': groupInfo.toJson(),
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Query group information
   Future<List<GroupInfo>> getGroupsInfo({
     required List<String> groupIDList,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getGroupsInfo',
-              _buildParam({
-                'groupIDList': groupIDList,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toList(value, (map) => GroupInfo.fromJson(map)));
+  }) {
+    final params = {
+      'groupIDList': groupIDList,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getGroupsInfo', params)
+        : _channel.invokeMethod('getGroupsInfo', _buildParam(params));
+    return future.then(
+      (value) => Utils.toList(value, (map) => GroupInfo.fromJson(map)),
+    );
+  }
 
   /// Apply to join a group, requiring approval from an administrator or the group.
   /// [joinSource] 2: Invited, 3: Searched, 4: Using a QR code
   Future<dynamic> joinGroup(
-          {required String groupID,
-          String? reason,
-          String? operationID,
-          int joinSource = 3,
-          String? ex}) =>
-      _channel.invokeMethod(
-          'joinGroup',
-          _buildParam({
-            'groupID': groupID,
-            'reason': reason,
-            'joinSource': joinSource,
-            'ex': ex,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+      {required String groupID,
+      String? reason,
+      String? operationID,
+      int joinSource = 3,
+      String? ex}) {
+    return _invoke('joinGroup', {
+      'groupID': groupID,
+      'reason': reason,
+      'joinSource': joinSource,
+      'ex': ex,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Exit a group
   Future<dynamic> quitGroup({
     required String groupID,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'quitGroup',
-          _buildParam({
-            'groupID': groupID,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('quitGroup', {
+      'groupID': groupID,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   // (Continuing the code)
 
@@ -250,14 +265,13 @@ class GroupManager {
     required String groupID,
     required String userID,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'transferGroupOwner',
-          _buildParam({
-            'groupID': groupID,
-            'userID': userID,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('transferGroupOwner', {
+      'groupID': groupID,
+      'userID': userID,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Handle group membership applications received as a group owner or administrator
   Future<List<GroupApplicationInfo>> getGroupApplicationListAsRecipient({
@@ -267,14 +281,14 @@ class GroupManager {
     if (req != null && req.offset > 0) {
       assert(req.count > 0, 'count must be greater than 0');
     }
-    return _channel
-        .invokeMethod(
-            'getGroupApplicationListAsRecipient',
-            _buildParam({
-              'req': req?.toJson() ?? {},
-              "operationID": Utils.checkOperationID(operationID),
-            }))
-        .then((value) => Utils.toList(value, (map) => GroupApplicationInfo.fromJson(map)));
+    final future = _invoke('getGroupApplicationListAsRecipient', {
+      'req': req?.toJson() ?? {},
+      "operationID": Utils.checkOperationID(operationID),
+    });
+    return future.then(
+      (value) =>
+          Utils.toList(value, (map) => GroupApplicationInfo.fromJson(map)),
+    );
   }
 
   /// Get the list of group membership applications sent by the user
@@ -286,14 +300,14 @@ class GroupManager {
       assert(req.count > 0, 'count must be greater than 0');
     }
 
-    return _channel
-        .invokeMethod(
-            'getGroupApplicationListAsApplicant',
-            _buildParam({
-              'req': req?.toJson() ?? {},
-              "operationID": Utils.checkOperationID(operationID),
-            }))
-        .then((value) => Utils.toList(value, (map) => GroupApplicationInfo.fromJson(map)));
+    final future = _invoke('getGroupApplicationListAsApplicant', {
+      'req': req?.toJson() ?? {},
+      "operationID": Utils.checkOperationID(operationID),
+    });
+    return future.then(
+      (value) =>
+          Utils.toList(value, (map) => GroupApplicationInfo.fromJson(map)),
+    );
   }
 
   /// Accept a group membership application as an administrator or group owner
@@ -303,15 +317,14 @@ class GroupManager {
     required String userID,
     String? handleMsg,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'acceptGroupApplication',
-          _buildParam({
-            'groupID': groupID,
-            'userID': userID,
-            'handleMsg': handleMsg,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('acceptGroupApplication', {
+      'groupID': groupID,
+      'userID': userID,
+      'handleMsg': handleMsg,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Refuse a group membership application as an administrator or group owner
   /// Note: Membership applications require approval from administrators or the group.
@@ -320,15 +333,14 @@ class GroupManager {
     required String userID,
     String? handleMsg,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'refuseGroupApplication',
-          _buildParam({
-            'groupID': groupID,
-            'userID': userID,
-            'handleMsg': handleMsg,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('refuseGroupApplication', {
+      'groupID': groupID,
+      'userID': userID,
+      'handleMsg': handleMsg,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   // (Continuing the code)
 
@@ -337,13 +349,12 @@ class GroupManager {
   Future<dynamic> dismissGroup({
     required String groupID,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'dismissGroup',
-          _buildParam({
-            'groupID': groupID,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('dismissGroup', {
+      'groupID': groupID,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Enable or disable group mute, preventing all group members from sending messages
   /// [groupID] Group ID
@@ -352,14 +363,13 @@ class GroupManager {
     required String groupID,
     required bool mute,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'changeGroupMute',
-          _buildParam({
-            'groupID': groupID,
-            'mute': mute,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('changeGroupMute', {
+      'groupID': groupID,
+      'mute': mute,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Mute a group member
   /// [groupID] Group ID
@@ -370,15 +380,14 @@ class GroupManager {
     required String userID,
     int seconds = 0,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'changeGroupMemberMute',
-          _buildParam({
-            'groupID': groupID,
-            'userID': userID,
-            'seconds': seconds,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('changeGroupMemberMute', {
+      'groupID': groupID,
+      'userID': userID,
+      'seconds': seconds,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Set the nickname of a group member
   /// [groupID] Group ID
@@ -391,7 +400,8 @@ class GroupManager {
     String? groupNickname,
     String? operationID,
   }) {
-    final req = SetGroupMemberInfo(groupID: groupID, userID: userID, nickname: groupNickname);
+    final req = SetGroupMemberInfo(
+        groupID: groupID, userID: userID, nickname: groupNickname);
 
     return setGroupMemberInfo(groupMembersInfo: req, operationID: operationID);
   }
@@ -405,19 +415,22 @@ class GroupManager {
     bool isSearchGroupID = false,
     bool isSearchGroupName = false,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'searchGroups',
-              _buildParam({
-                'searchParam': {
-                  'keywordList': keywordList,
-                  'isSearchGroupID': isSearchGroupID,
-                  'isSearchGroupName': isSearchGroupName,
-                },
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toList(value, (map) => GroupInfo.fromJson(map)));
+  }) {
+    final params = {
+      'searchParam': {
+        'keywordList': keywordList,
+        'isSearchGroupID': isSearchGroupID,
+        'isSearchGroupName': isSearchGroupName,
+      },
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('searchGroups', params)
+        : _channel.invokeMethod('searchGroups', _buildParam(params));
+    return future.then(
+      (value) => Utils.toList(value, (map) => GroupInfo.fromJson(map)),
+    );
+  }
 
   /// Set group member role
   /// [groupID] Group ID
@@ -430,7 +443,8 @@ class GroupManager {
     required int roleLevel,
     String? operationID,
   }) {
-    final req = SetGroupMemberInfo(groupID: groupID, userID: userID, roleLevel: roleLevel);
+    final req = SetGroupMemberInfo(
+        groupID: groupID, userID: userID, roleLevel: roleLevel);
 
     return setGroupMemberInfo(groupMembersInfo: req, operationID: operationID);
   }
@@ -444,20 +458,29 @@ class GroupManager {
     int joinTimeEnd = 0,
     List<String> filterUserIDList = const [],
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getGroupMemberListByJoinTimeFilter',
-              _buildParam({
-                'groupID': groupID,
-                'offset': offset,
-                'count': count,
-                'joinTimeBegin': joinTimeBegin,
-                'joinTimeEnd': joinTimeEnd,
-                'excludeUserIDList': filterUserIDList,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)));
+  }) {
+    final params = {
+      'groupID': groupID,
+      'offset': offset,
+      'count': count,
+      'joinTimeBegin': joinTimeBegin,
+      'joinTimeEnd': joinTimeEnd,
+      'excludeUserIDList': filterUserIDList,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call(
+            'getGroupMemberListByJoinTimeFilter',
+            params,
+          )
+        : _channel.invokeMethod(
+            'getGroupMemberListByJoinTimeFilter',
+            _buildParam(params),
+          );
+    return future.then(
+      (value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)),
+    );
+  }
 
   /// Set group verification for joining
   /// [groupID] Group ID
@@ -506,15 +529,21 @@ class GroupManager {
   Future<List<GroupMembersInfo>> getGroupOwnerAndAdmin({
     required String groupID,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getGroupMemberOwnerAndAdmin',
-              _buildParam({
-                'groupID': groupID,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)));
+  }) {
+    final params = {
+      'groupID': groupID,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getGroupMemberOwnerAndAdmin', params)
+        : _channel.invokeMethod(
+            'getGroupMemberOwnerAndAdmin',
+            _buildParam(params),
+          );
+    return future.then(
+      (value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)),
+    );
+  }
 
   /// Search for group members
   /// [groupID] Group ID
@@ -531,22 +560,25 @@ class GroupManager {
     int offset = 0,
     int count = 40,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'searchGroupMembers',
-              _buildParam({
-                'searchParam': {
-                  'groupID': groupID,
-                  'keywordList': keywordList,
-                  'isSearchUserID': isSearchUserID,
-                  'isSearchMemberNickname': isSearchMemberNickname,
-                  'offset': offset,
-                  'count': count,
-                },
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)));
+  }) {
+    final params = {
+      'searchParam': {
+        'groupID': groupID,
+        'keywordList': keywordList,
+        'isSearchUserID': isSearchUserID,
+        'isSearchMemberNickname': isSearchMemberNickname,
+        'offset': offset,
+        'count': count,
+      },
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('searchGroupMembers', params)
+        : _channel.invokeMethod('searchGroupMembers', _buildParam(params));
+    return future.then(
+      (value) => Utils.toList(value, (map) => GroupMembersInfo.fromJson(map)),
+    );
+  }
 
   /// Query a group
   /// [groupID] Group ID
@@ -563,58 +595,63 @@ class GroupManager {
     int offset = 0,
     int count = 40,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'searchGroupMembers',
-              _buildParam({
-                'searchParam': {
-                  'groupID': groupID,
-                  'keywordList': keywordList,
-                  'isSearchUserID': isSearchUserID,
-                  'isSearchMemberNickname': isSearchMemberNickname,
-                  'offset': offset,
-                  'count': count,
-                },
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toListMap(value));
+  }) {
+    final params = {
+      'searchParam': {
+        'groupID': groupID,
+        'keywordList': keywordList,
+        'isSearchUserID': isSearchUserID,
+        'isSearchMemberNickname': isSearchMemberNickname,
+        'offset': offset,
+        'count': count,
+      },
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('searchGroupMembers', params)
+        : _channel.invokeMethod('searchGroupMembers', _buildParam(params));
+    return future.then((value) => Utils.toListMap(value));
+  }
 
   /// Modify the GroupMemberInfo ex field
   Future<dynamic> setGroupMemberInfo({
     required SetGroupMemberInfo groupMembersInfo,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'setGroupMemberInfo',
-          _buildParam({
-            'info': groupMembersInfo.toJson(),
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('setGroupMemberInfo', {
+      'info': groupMembersInfo.toJson(),
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   Future<dynamic> getUsersInGroup(
     String groupID,
     List<String> userIDs, {
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'getUsersInGroup',
-          _buildParam({
-            'groupID': groupID,
-            'userIDs': userIDs,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    final params = {
+      'groupID': groupID,
+      'userIDs': userIDs,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    return MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getUsersInGroup', params)
+        : _channel.invokeMethod('getUsersInGroup', _buildParam(params));
+  }
 
-  Future<int> getGroupApplicationUnhandledCount(GetGroupApplicationUnhandledCountReq req,
+  Future<int> getGroupApplicationUnhandledCount(
+          GetGroupApplicationUnhandledCountReq req,
           {String? operationID}) =>
-      _channel
-          .invokeMethod(
-              'getGroupApplicationUnhandledCount',
-              _buildParam({
-                'req': req.toJson(),
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => int.parse(value));
+      _invoke('getGroupApplicationUnhandledCount', {
+        'req': req.toJson(),
+        'operationID': Utils.checkOperationID(operationID),
+      }).then((value) => value is int ? value : int.parse('$value'));
+
+  Future<dynamic> _invoke(String method, Map<String, dynamic> params) {
+    return MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call(method, params)
+        : _channel.invokeMethod(method, _buildParam(params));
+  }
 
   static Map _buildParam(Map<String, dynamic> param) {
     param["ManagerName"] = "groupManager";

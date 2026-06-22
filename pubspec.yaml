@@ -5,12 +5,13 @@ homepage: https://www.openim.io
 repository: https://github.com/openimsdk/open-im-sdk-flutter
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.1.0 <4.0.0"
   flutter: ">=1.20.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  ffi: ^2.1.3
   
 dev_dependencies:
   flutter_test:
@@ -31,6 +32,8 @@ flutter:
         package: io.openim.flutter_openim_sdk
         pluginClass: FlutterOpenimSdkPlugin
       ios:
+        pluginClass: FlutterOpenimSdkPlugin
+      macos:
         pluginClass: FlutterOpenimSdkPlugin
 
   # To add assets to your plugin package, add an assets section, like this:

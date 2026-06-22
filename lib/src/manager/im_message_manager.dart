@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_openim_sdk/flutter_openim_sdk.dart';
+import 'package:flutter_openim_sdk/src/macos_openim_bridge.dart';
 
 class MessageManager {
   MethodChannel _channel;
@@ -14,6 +15,11 @@ class MessageManager {
   Future setAdvancedMsgListener(OnAdvancedMsgListener listener) {
     this.msgListener = listener;
     // advancedMsgListeners.add(listener);
+    if (MacOSOpenIMBridge.instance.isSupported) {
+      return MacOSOpenIMBridge.instance.call('setAdvancedMsgListener', {
+        'id': listener.id,
+      });
+    }
     return _channel.invokeMethod(
         'setAdvancedMsgListener',
         _buildParam({
@@ -38,19 +44,21 @@ class MessageManager {
     String? groupID,
     bool isOnlineOnly = false,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'sendMessage',
-              _buildParam({
-                'message': message.toJson(),
-                'offlinePushInfo': offlinePushInfo.toJson(),
-                'userID': userID ?? '',
-                'groupID': groupID ?? '',
-                'isOnlineOnly': isOnlineOnly,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    final params = {
+      'message': message.toJson(),
+      'offlinePushInfo': offlinePushInfo.toJson(),
+      'userID': userID ?? '',
+      'groupID': groupID ?? '',
+      'isOnlineOnly': isOnlineOnly,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('sendMessage', params)
+        : _channel.invokeMethod('sendMessage', _buildParam(params));
+    return future
+        .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }
 
   /// Delete a message from local storage
   /// [message] Message to be deleted
@@ -58,14 +66,20 @@ class MessageManager {
     required String conversationID,
     required String clientMsgID,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'deleteMessageFromLocalStorage',
-          _buildParam({
-            "conversationID": conversationID,
-            "clientMsgID": clientMsgID,
-            "operationID": Utils.checkOperationID(operationID),
-          }));
+  }) {
+    final params = {
+      "conversationID": conversationID,
+      "clientMsgID": clientMsgID,
+      "operationID": Utils.checkOperationID(operationID),
+    };
+    return MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance
+            .call('deleteMessageFromLocalStorage', params)
+        : _channel.invokeMethod(
+            'deleteMessageFromLocalStorage',
+            _buildParam(params),
+          );
+  }
 
   /// core-sdk: DeleteMessage
   /// Delete a specified message from local and server
@@ -74,34 +88,38 @@ class MessageManager {
     required String conversationID,
     required String clientMsgID,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'deleteMessageFromLocalAndSvr',
-          _buildParam({
-            "conversationID": conversationID,
-            "clientMsgID": clientMsgID,
-            "operationID": Utils.checkOperationID(operationID),
-          }));
+  }) {
+    final params = {
+      "conversationID": conversationID,
+      "clientMsgID": clientMsgID,
+      "operationID": Utils.checkOperationID(operationID),
+    };
+    return MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance
+            .call('deleteMessageFromLocalAndSvr', params)
+        : _channel.invokeMethod(
+            'deleteMessageFromLocalAndSvr',
+            _buildParam(params),
+          );
+  }
 
   /// Delete all local chat records
   Future<dynamic> deleteAllMsgFromLocal({
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'deleteAllMsgFromLocal',
-          _buildParam({
-            "operationID": Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('deleteAllMsgFromLocal', {
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Delete all chat records from local and server
   Future<dynamic> deleteAllMsgFromLocalAndSvr({
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'deleteAllMsgFromLocalAndSvr',
-          _buildParam({
-            "operationID": Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('deleteAllMsgFromLocalAndSvr', {
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Insert a single chat message into local storage
   /// [receiverID] Receiver's ID
@@ -112,17 +130,14 @@ class MessageManager {
     String? senderID,
     Message? message,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'insertSingleMessageToLocalStorage',
-              _buildParam({
-                "message": message?.toJson(),
-                "receiverID": receiverID,
-                "senderID": senderID,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('insertSingleMessageToLocalStorage', {
+      "message": message?.toJson(),
+      "receiverID": receiverID,
+      "senderID": senderID,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Insert a group chat message into local storage
   /// [groupID] Group ID
@@ -133,42 +148,46 @@ class MessageManager {
     String? senderID,
     Message? message,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'insertGroupMessageToLocalStorage',
-              _buildParam({
-                "message": message?.toJson(),
-                "groupID": groupID,
-                "senderID": senderID,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('insertGroupMessageToLocalStorage', {
+      "message": message?.toJson(),
+      "groupID": groupID,
+      "senderID": senderID,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Typing status update
   /// [msgTip] Custom content
-  @Deprecated('Use [OpenIM.iMManager.conversationManager.changeInputStates(conversationID:focus:)] instead')
+  @Deprecated(
+      'Use [OpenIM.iMManager.conversationManager.changeInputStates(conversationID:focus:)] instead')
   Future typingStatusUpdate({
     required String userID,
     String? msgTip,
     String? operationID,
   }) {
-    throw UnimplementedError('typingStatusUpdate');
+    return _invoke('typingStatusUpdate', {
+      'userID': userID,
+      'msgTip': msgTip,
+      'operationID': Utils.checkOperationID(operationID),
+    });
   }
 
   /// Create a text message
   Future<Message> createTextMessage({
     required String text,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createTextMessage',
-              _buildParam({
-                'text': text,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    final params = {
+      'text': text,
+      "operationID": Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('createTextMessage', params)
+        : _channel.invokeMethod('createTextMessage', _buildParam(params));
+    return future
+        .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }
 
   /// Create an @ message
   /// [text] Input content
@@ -181,51 +200,39 @@ class MessageManager {
     List<AtUserInfo> atUserInfoList = const [],
     Message? quoteMessage,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-            'createTextAtMessage',
-            _buildParam({
-              'text': text,
-              'atUserIDList': atUserIDList,
-              'atUserInfoList': atUserInfoList.map((e) => e.toJson()).toList(),
-              'quoteMessage': quoteMessage?.toJson(),
-              "operationID": Utils.checkOperationID(operationID),
-            }),
-          )
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createTextAtMessage', {
+      'text': text,
+      'atUserIDList': atUserIDList,
+      'atUserInfoList': atUserInfoList.map((e) => e.toJson()).toList(),
+      'quoteMessage': quoteMessage?.toJson(),
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create an image message
   /// [imagePath] Path
   Future<Message> createImageMessage({
     required String imagePath,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-            'createImageMessage',
-            _buildParam({
-              'imagePath': imagePath,
-              "operationID": Utils.checkOperationID(operationID),
-            }),
-          )
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createImageMessage', {
+      'imagePath': imagePath,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create an image message from a full path
   /// [imagePath] Path
   Future<Message> createImageMessageFromFullPath({
     required String imagePath,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-            'createImageMessageFromFullPath',
-            _buildParam({
-              'imagePath': imagePath,
-              "operationID": Utils.checkOperationID(operationID),
-            }),
-          )
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createImageMessageFromFullPath', {
+      'imagePath': imagePath,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a sound message
   /// [soundPath] Path
@@ -234,17 +241,13 @@ class MessageManager {
     required String soundPath,
     required int duration,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-            'createSoundMessage',
-            _buildParam({
-              'soundPath': soundPath,
-              "duration": duration,
-              "operationID": Utils.checkOperationID(operationID),
-            }),
-          )
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createSoundMessage', {
+      'soundPath': soundPath,
+      "duration": duration,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a sound message from a full path
   /// [soundPath] Path
@@ -253,17 +256,13 @@ class MessageManager {
     required String soundPath,
     required int duration,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-            'createSoundMessageFromFullPath',
-            _buildParam({
-              'soundPath': soundPath,
-              "duration": duration,
-              "operationID": Utils.checkOperationID(operationID),
-            }),
-          )
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createSoundMessageFromFullPath', {
+      'soundPath': soundPath,
+      "duration": duration,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a video message
   /// [videoPath] Path
@@ -276,18 +275,15 @@ class MessageManager {
     required int duration,
     required String snapshotPath,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createVideoMessage',
-              _buildParam({
-                'videoPath': videoPath,
-                'videoType': videoType,
-                'duration': duration,
-                'snapshotPath': snapshotPath,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createVideoMessage', {
+      'videoPath': videoPath,
+      'videoType': videoType,
+      'duration': duration,
+      'snapshotPath': snapshotPath,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a video message from a full path
   /// [videoPath] Path
@@ -300,18 +296,15 @@ class MessageManager {
     required int duration,
     required String snapshotPath,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createVideoMessageFromFullPath',
-              _buildParam({
-                'videoPath': videoPath,
-                'videoType': videoType,
-                'duration': duration,
-                'snapshotPath': snapshotPath,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createVideoMessageFromFullPath', {
+      'videoPath': videoPath,
+      'videoType': videoType,
+      'duration': duration,
+      'snapshotPath': snapshotPath,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a file message
   /// [filePath] Path
@@ -321,15 +314,11 @@ class MessageManager {
     required String fileName,
     String? operationID,
   }) {
-    return _channel
-        .invokeMethod(
-            'createFileMessage',
-            _buildParam({
-              'filePath': filePath,
-              'fileName': fileName,
-              "operationID": Utils.checkOperationID(operationID),
-            }))
-        .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+    return _invokeMessage('createFileMessage', {
+      'filePath': filePath,
+      'fileName': fileName,
+      "operationID": Utils.checkOperationID(operationID),
+    });
   }
 
   /// Create a file message from a full path
@@ -339,16 +328,13 @@ class MessageManager {
     required String filePath,
     required String fileName,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createFileMessageFromFullPath',
-              _buildParam({
-                'filePath': filePath,
-                'fileName': fileName,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createFileMessageFromFullPath', {
+      'filePath': filePath,
+      'fileName': fileName,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a merged message
   /// [messageList] Selected messages
@@ -359,17 +345,14 @@ class MessageManager {
     required String title,
     required List<String> summaryList,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createMergerMessage',
-              _buildParam({
-                'messageList': messageList.map((e) => e.toJson()).toList(),
-                'title': title,
-                'summaryList': summaryList,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createMergerMessage', {
+      'messageList': messageList.map((e) => e.toJson()).toList(),
+      'title': title,
+      'summaryList': summaryList,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a forwarded message
   /// [message] Message to be forwarded
@@ -377,13 +360,14 @@ class MessageManager {
     required Message message,
     String? operationID,
   }) {
-    return _channel
-        .invokeMethod(
-            'createForwardMessage',
-            _buildParam({
-              'message': message.toJson(),
-              "operationID": Utils.checkOperationID(operationID),
-            }))
+    final params = {
+      'message': message.toJson(),
+      "operationID": Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('createForwardMessage', params)
+        : _channel.invokeMethod('createForwardMessage', _buildParam(params));
+    return future
         .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
   }
 
@@ -396,17 +380,14 @@ class MessageManager {
     required double longitude,
     required String description,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createLocationMessage',
-              _buildParam({
-                'latitude': latitude,
-                'longitude': longitude,
-                'description': description,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createLocationMessage', {
+      'latitude': latitude,
+      'longitude': longitude,
+      'description': description,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a custom message
   /// [data] Custom data
@@ -417,17 +398,14 @@ class MessageManager {
     required String extension,
     required String description,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createCustomMessage',
-              _buildParam({
-                'data': data,
-                'extension': extension,
-                'description': description,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createCustomMessage', {
+      'data': data,
+      'extension': extension,
+      'description': description,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a quoted message
   /// [text] Reply content
@@ -436,16 +414,18 @@ class MessageManager {
     required String text,
     required Message quoteMsg,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createQuoteMessage',
-              _buildParam({
-                'quoteText': text,
-                'quoteMessage': quoteMsg.toJson(),
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    final params = {
+      'quoteText': text,
+      'quoteMessage': quoteMsg.toJson(),
+      "operationID": Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('createQuoteMessage', params)
+        : _channel.invokeMethod('createQuoteMessage', _buildParam(params));
+    return future
+        .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }
 
   /// Create a card message
   /// [data] Custom data
@@ -455,20 +435,17 @@ class MessageManager {
     String? faceURL,
     String? ex,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createCardMessage',
-              _buildParam({
-                'cardMessage': {
-                  'userID': userID,
-                  'nickname': nickname,
-                  'faceURL': faceURL,
-                  'ex': ex,
-                },
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createCardMessage', {
+      'cardMessage': {
+        'userID': userID,
+        'nickname': nickname,
+        'faceURL': faceURL,
+        'ex': ex,
+      },
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a custom emoji message
   /// [index] Positional emoji, matched based on index
@@ -477,16 +454,13 @@ class MessageManager {
     int index = -1,
     String? data,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createFaceMessage',
-              _buildParam({
-                'index': index,
-                'data': data,
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createFaceMessage', {
+      'index': index,
+      'data': data,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Search messages
   /// [conversationID] Query based on conversation, pass null for global search
@@ -509,25 +483,27 @@ class MessageManager {
     int pageIndex = 1,
     int count = 40,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'searchLocalMessages',
-              _buildParam({
-                'filter': {
-                  'conversationID': conversationID,
-                  'keywordList': keywordList,
-                  'keywordListMatchType': keywordListMatchType,
-                  'senderUserIDList': senderUserIDList,
-                  'messageTypeList': messageTypeList,
-                  'searchTimePosition': searchTimePosition,
-                  'searchTimePeriod': searchTimePeriod,
-                  'pageIndex': pageIndex,
-                  'count': count,
-                },
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => SearchResult.fromJson(map)));
+  }) {
+    final params = {
+      'filter': {
+        'conversationID': conversationID,
+        'keywordList': keywordList,
+        'keywordListMatchType': keywordListMatchType,
+        'senderUserIDList': senderUserIDList,
+        'messageTypeList': messageTypeList,
+        'searchTimePosition': searchTimePosition,
+        'searchTimePeriod': searchTimePeriod,
+        'pageIndex': pageIndex,
+        'count': count,
+      },
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('searchLocalMessages', params)
+        : _channel.invokeMethod('searchLocalMessages', _buildParam(params));
+    return future.then(
+        (value) => Utils.toObj(value, (map) => SearchResult.fromJson(map)));
+  }
 
   /// Revoke a message
   /// [message] The message to be revoked
@@ -535,14 +511,13 @@ class MessageManager {
     required String conversationID,
     required String clientMsgID,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'revokeMessage',
-          _buildParam({
-            'conversationID': conversationID,
-            'clientMsgID': clientMsgID,
-            "operationID": Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('revokeMessage', {
+      'conversationID': conversationID,
+      'clientMsgID': clientMsgID,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Mark messages as read
   /// [conversationID] Conversation ID
@@ -552,14 +527,13 @@ class MessageManager {
     required String conversationID,
     required List<String> messageIDList,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'markMessagesAsReadByMsgID',
-          _buildParam({
-            "conversationID": conversationID,
-            "messageIDList": messageIDList,
-            "operationID": Utils.checkOperationID(operationID),
-          }));
+  }) {
+    return _invoke('markMessagesAsReadByMsgID', {
+      "conversationID": conversationID,
+      "messageIDList": messageIDList,
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Get chat history (messages prior to startMsg)
   /// [conversationID] Conversation ID, can be used for querying notifications
@@ -572,18 +546,24 @@ class MessageManager {
     GetHistoryViewType viewType = GetHistoryViewType.history,
     int? count,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getAdvancedHistoryMessageList',
-              _buildParam({
-                'conversationID': conversationID ?? '',
-                'startClientMsgID': startMsg?.clientMsgID ?? '',
-                'count': count ?? 40,
-                'viewType': viewType.rawValue,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => AdvancedMessage.fromJson(map)));
+  }) {
+    final params = {
+      'conversationID': conversationID ?? '',
+      'startClientMsgID': startMsg?.clientMsgID ?? '',
+      'count': count ?? 40,
+      'viewType': viewType.rawValue,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance
+            .call('getAdvancedHistoryMessageList', params)
+        : _channel.invokeMethod(
+            'getAdvancedHistoryMessageList',
+            _buildParam(params),
+          );
+    return future.then(
+        (value) => Utils.toObj(value, (map) => AdvancedMessage.fromJson(map)));
+  }
 
   /// Get chat history (newly received chat history after startMsg). Used for locating a specific message in global search and then fetching messages received after that message.
   /// [conversationID] Conversation ID, can be used for querying notifications
@@ -595,18 +575,26 @@ class MessageManager {
     GetHistoryViewType viewType = GetHistoryViewType.history,
     int? count,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getAdvancedHistoryMessageListReverse',
-              _buildParam({
-                'conversationID': conversationID ?? '',
-                'startClientMsgID': startMsg?.clientMsgID ?? '',
-                'count': count ?? 40,
-                'viewType': viewType.rawValue,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => AdvancedMessage.fromJson(map)));
+  }) {
+    final params = {
+      'conversationID': conversationID ?? '',
+      'startClientMsgID': startMsg?.clientMsgID ?? '',
+      'count': count ?? 40,
+      'viewType': viewType.rawValue,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call(
+            'getAdvancedHistoryMessageListReverse',
+            params,
+          )
+        : _channel.invokeMethod(
+            'getAdvancedHistoryMessageListReverse',
+            _buildParam(params),
+          );
+    return future.then(
+        (value) => Utils.toObj(value, (map) => AdvancedMessage.fromJson(map)));
+  }
 
   /// Find message details
   /// [conversationID] Conversation ID
@@ -614,15 +602,15 @@ class MessageManager {
   Future<SearchResult> findMessageList({
     required List<SearchParams> searchParams,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'findMessageList',
-              _buildParam({
-                'searchParams': searchParams.map((e) => e.toJson()).toList(),
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => SearchResult.fromJson(map)));
+  }) {
+    final future = _invoke('findMessageList', {
+      'searchParams': searchParams.map((e) => e.toJson()).toList(),
+      'operationID': Utils.checkOperationID(operationID),
+    });
+    return future.then(
+      (value) => Utils.toObj(value, (map) => SearchResult.fromJson(map)),
+    );
+  }
 
   /// Rich text message
   /// [text] Input content
@@ -631,17 +619,13 @@ class MessageManager {
     required String text,
     List<RichMessageInfo> list = const [],
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-            'createAdvancedTextMessage',
-            _buildParam({
-              'text': text,
-              'richMessageInfoList': list.map((e) => e.toJson()).toList(),
-              "operationID": Utils.checkOperationID(operationID),
-            }),
-          )
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createAdvancedTextMessage', {
+      'text': text,
+      'richMessageInfoList': list.map((e) => e.toJson()).toList(),
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Rich text message with quote
   /// [text] Content for the reply
@@ -652,17 +636,14 @@ class MessageManager {
     required Message quoteMsg,
     List<RichMessageInfo> list = const [],
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createAdvancedQuoteMessage',
-              _buildParam({
-                'quoteText': text,
-                'quoteMessage': quoteMsg.toJson(),
-                'richMessageInfoList': list.map((e) => e.toJson()).toList(),
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createAdvancedQuoteMessage', {
+      'quoteText': text,
+      'quoteMessage': quoteMsg.toJson(),
+      'richMessageInfoList': list.map((e) => e.toJson()).toList(),
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Send a message
   /// [message] Message body [createImageMessageByURL],[createSoundMessageByURL],[createVideoMessageByURL],[createFileMessageByURL]
@@ -676,19 +657,16 @@ class MessageManager {
     String? groupID,
     bool isOnlineOnly = false,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'sendMessageNotOss',
-              _buildParam({
-                'message': message.toJson(),
-                'offlinePushInfo': offlinePushInfo.toJson(),
-                'userID': userID ?? '',
-                'groupID': groupID ?? '',
-                'isOnlineOnly': isOnlineOnly,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('sendMessageNotOss', {
+      'message': message.toJson(),
+      'offlinePushInfo': offlinePushInfo.toJson(),
+      'userID': userID ?? '',
+      'groupID': groupID ?? '',
+      'isOnlineOnly': isOnlineOnly,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create an image message by URL
   Future<Message> createImageMessageByURL({
@@ -697,66 +675,55 @@ class MessageManager {
     required PictureInfo snapshotPicture,
     String? sourcePath,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-            'createImageMessageByURL',
-            _buildParam({
-              'sourcePath': sourcePath,
-              'sourcePicture': sourcePicture.toJson(),
-              'bigPicture': bigPicture.toJson(),
-              'snapshotPicture': snapshotPicture.toJson(),
-              "operationID": Utils.checkOperationID(operationID),
-            }),
-          )
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createImageMessageByURL', {
+      'sourcePath': sourcePath,
+      'sourcePicture': sourcePicture.toJson(),
+      'bigPicture': bigPicture.toJson(),
+      'snapshotPicture': snapshotPicture.toJson(),
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a sound message
   Future<Message> createSoundMessageByURL({
     required SoundElem soundElem,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-            'createSoundMessageByURL',
-            _buildParam({
-              'soundElem': soundElem.toJson(),
-              "operationID": Utils.checkOperationID(operationID),
-            }),
-          )
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createSoundMessageByURL', {
+      'soundElem': soundElem.toJson(),
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a video message
   Future<Message> createVideoMessageByURL({
     required VideoElem videoElem,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createVideoMessageByURL',
-              _buildParam({
-                'videoElem': videoElem.toJson(),
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createVideoMessageByURL', {
+      'videoElem': videoElem.toJson(),
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   /// Create a file message
   Future<Message> createFileMessageByURL({
     required FileElem fileElem,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'createFileMessageByURL',
-              _buildParam({
-                'fileElem': fileElem.toJson(),
-                "operationID": Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => Message.fromJson(map)));
+  }) {
+    return _invokeMessage('createFileMessageByURL', {
+      'fileElem': fileElem.toJson(),
+      "operationID": Utils.checkOperationID(operationID),
+    });
+  }
 
   ///
   Future setCustomBusinessListener(OnCustomBusinessListener listener) {
     this.customBusinessListener = listener;
+    if (MacOSOpenIMBridge.instance.isSupported) {
+      return MacOSOpenIMBridge.instance.call('setCustomBusinessListener', {});
+    }
     return _channel.invokeMethod('setCustomBusinessListener', _buildParam({}));
   }
 
@@ -766,26 +733,34 @@ class MessageManager {
     required String localEx,
     String? operationID,
   }) {
-    return _channel.invokeMethod(
-        'setMessageLocalEx',
-        _buildParam({
-          "conversationID": conversationID,
-          "clientMsgID": clientMsgID,
-          "localEx": localEx,
-          "operationID": Utils.checkOperationID(operationID),
-        }));
+    return _invoke('setMessageLocalEx', {
+      "conversationID": conversationID,
+      "clientMsgID": clientMsgID,
+      "localEx": localEx,
+      "operationID": Utils.checkOperationID(operationID),
+    });
   }
 
   Future setAppBadge(
     int count, {
     String? operationID,
   }) {
-    return _channel.invokeMethod(
-        'setAppBadge',
-        _buildParam({
-          'count': count,
-          'operationID': Utils.checkOperationID(operationID),
-        }));
+    return _invoke('setAppBadge', {
+      'count': count,
+      'operationID': Utils.checkOperationID(operationID),
+    });
+  }
+
+  Future<dynamic> _invoke(String method, Map<String, dynamic> params) {
+    return MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call(method, params)
+        : _channel.invokeMethod(method, _buildParam(params));
+  }
+
+  Future<Message> _invokeMessage(String method, Map<String, dynamic> params) {
+    return _invoke(method, params).then(
+      (value) => Utils.toObj(value, (map) => Message.fromJson(map)),
+    );
   }
 
   static Map _buildParam(Map<String, dynamic> param) {

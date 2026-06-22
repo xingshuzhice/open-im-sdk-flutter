@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_openim_sdk/flutter_openim_sdk.dart';
 import 'package:flutter_openim_sdk/src/logger.dart';
+import 'package:flutter_openim_sdk/src/macos_openim_bridge.dart';
 
 class IMManager {
   MethodChannel _channel;
@@ -34,7 +35,7 @@ class IMManager {
   }
 
   void _addNativeCallback(MethodChannel _channel) {
-    _channel.setMethodCallHandler((call) {
+    Future<dynamic> handleNativeCallback(MethodCall call) {
       try {
         Logger.print('Flutter : $call');
         if (call.method == ListenerType.connectListener) {
@@ -70,7 +71,8 @@ class IMManager {
               userManager.listener.selfInfoUpdated(userInfo);
               break;
             case 'onUserStatusChanged':
-              final status = Utils.toObj(data, (map) => UserStatusInfo.fromJson(map));
+              final status =
+                  Utils.toObj(data, (map) => UserStatusInfo.fromJson(map));
               userManager.listener.userStatusChanged(status);
               break;
           }
@@ -79,19 +81,23 @@ class IMManager {
           dynamic data = call.arguments['data'];
           switch (type) {
             case 'onGroupApplicationAccepted':
-              final i = Utils.toObj(data, (map) => GroupApplicationInfo.fromJson(map));
+              final i = Utils.toObj(
+                  data, (map) => GroupApplicationInfo.fromJson(map));
               groupManager.listener.groupApplicationAccepted(i);
               break;
             case 'onGroupApplicationAdded':
-              final i = Utils.toObj(data, (map) => GroupApplicationInfo.fromJson(map));
+              final i = Utils.toObj(
+                  data, (map) => GroupApplicationInfo.fromJson(map));
               groupManager.listener.groupApplicationAdded(i);
               break;
             case 'onGroupApplicationDeleted':
-              final i = Utils.toObj(data, (map) => GroupApplicationInfo.fromJson(map));
+              final i = Utils.toObj(
+                  data, (map) => GroupApplicationInfo.fromJson(map));
               groupManager.listener.groupApplicationDeleted(i);
               break;
             case 'onGroupApplicationRejected':
-              final i = Utils.toObj(data, (map) => GroupApplicationInfo.fromJson(map));
+              final i = Utils.toObj(
+                  data, (map) => GroupApplicationInfo.fromJson(map));
               groupManager.listener.groupApplicationRejected(i);
               break;
             case 'onGroupDismissed':
@@ -103,15 +109,18 @@ class IMManager {
               groupManager.listener.groupInfoChanged(i);
               break;
             case 'onGroupMemberAdded':
-              final i = Utils.toObj(data, (map) => GroupMembersInfo.fromJson(map));
+              final i =
+                  Utils.toObj(data, (map) => GroupMembersInfo.fromJson(map));
               groupManager.listener.groupMemberAdded(i);
               break;
             case 'onGroupMemberDeleted':
-              final i = Utils.toObj(data, (map) => GroupMembersInfo.fromJson(map));
+              final i =
+                  Utils.toObj(data, (map) => GroupMembersInfo.fromJson(map));
               groupManager.listener.groupMemberDeleted(i);
               break;
             case 'onGroupMemberInfoChanged':
-              final i = Utils.toObj(data, (map) => GroupMembersInfo.fromJson(map));
+              final i =
+                  Utils.toObj(data, (map) => GroupMembersInfo.fromJson(map));
               groupManager.listener.groupMemberInfoChanged(i);
               break;
             case 'onJoinedGroupAdded':
@@ -139,23 +148,30 @@ class IMManager {
               break;
             case 'onRecvC2CReadReceipt':
               var value = call.arguments['data']['msgReceiptList'];
-              var list = Utils.toList(value, (map) => ReadReceiptInfo.fromJson(map));
+              var list =
+                  Utils.toList(value, (map) => ReadReceiptInfo.fromJson(map));
               messageManager.msgListener.recvC2CReadReceipt(list);
               break;
             case 'onRecvNewMessage':
               var value = call.arguments['data']['message'];
-              final msg = Utils.toObj(value, (map) => Message.fromJson(map));
-              messageManager.msgListener.recvNewMessage(msg);
+              final messages = _messagesFromCallbackValue(value);
+              for (final msg in messages) {
+                messageManager.msgListener.recvNewMessage(msg);
+              }
               break;
             case 'onRecvOfflineNewMessage':
               var value = call.arguments['data']['message'];
-              final msg = Utils.toObj(value, (map) => Message.fromJson(map));
-              messageManager.msgListener.recvOfflineNewMessage(msg);
+              final messages = _messagesFromCallbackValue(value);
+              for (final msg in messages) {
+                messageManager.msgListener.recvOfflineNewMessage(msg);
+              }
               break;
             case 'onRecvOnlineOnlyMessage':
               var value = call.arguments['data']['message'];
-              final msg = Utils.toObj(value, (map) => Message.fromJson(map));
-              messageManager.msgListener.recvOnlineOnlyMessage(msg);
+              final messages = _messagesFromCallbackValue(value);
+              for (final msg in messages) {
+                messageManager.msgListener.recvOnlineOnlyMessage(msg);
+              }
               break;
           }
         } else if (call.method == ListenerType.msgSendProgressListener) {
@@ -189,19 +205,24 @@ class IMManager {
               conversationManager.listener.syncServerFailed(data);
               break;
             case 'onNewConversation':
-              var list = Utils.toList(data, (map) => ConversationInfo.fromJson(map));
+              var list =
+                  Utils.toList(data, (map) => ConversationInfo.fromJson(map));
               conversationManager.listener.newConversation(list);
               break;
             case 'onConversationChanged':
-              var list = Utils.toList(data, (map) => ConversationInfo.fromJson(map));
+              var list =
+                  Utils.toList(data, (map) => ConversationInfo.fromJson(map));
               conversationManager.listener.conversationChanged(list);
               break;
             case 'onTotalUnreadMessageCountChanged':
-              conversationManager.listener.totalUnreadMessageCountChanged(data ?? 0);
+              conversationManager.listener
+                  .totalUnreadMessageCountChanged(data ?? 0);
               break;
             case 'onConversationUserInputStatusChanged':
-              final i = Utils.toObj(data, (map) => InputStatusChangedData.fromJson(map));
-              conversationManager.listener.conversationUserInputStatusChanged(i);
+              final i = Utils.toObj(
+                  data, (map) => InputStatusChangedData.fromJson(map));
+              conversationManager.listener
+                  .conversationUserInputStatusChanged(i);
               break;
           }
         } else if (call.method == ListenerType.friendListener) {
@@ -222,19 +243,23 @@ class IMManager {
               friendshipManager.listener.friendAdded(u);
               break;
             case 'onFriendApplicationAccepted':
-              final u = Utils.toObj(data, (map) => FriendApplicationInfo.fromJson(map));
+              final u = Utils.toObj(
+                  data, (map) => FriendApplicationInfo.fromJson(map));
               friendshipManager.listener.friendApplicationAccepted(u);
               break;
             case 'onFriendApplicationAdded':
-              final u = Utils.toObj(data, (map) => FriendApplicationInfo.fromJson(map));
+              final u = Utils.toObj(
+                  data, (map) => FriendApplicationInfo.fromJson(map));
               friendshipManager.listener.friendApplicationAdded(u);
               break;
             case 'onFriendApplicationDeleted':
-              final u = Utils.toObj(data, (map) => FriendApplicationInfo.fromJson(map));
+              final u = Utils.toObj(
+                  data, (map) => FriendApplicationInfo.fromJson(map));
               friendshipManager.listener.friendApplicationDeleted(u);
               break;
             case 'onFriendApplicationRejected':
-              final u = Utils.toObj(data, (map) => FriendApplicationInfo.fromJson(map));
+              final u = Utils.toObj(
+                  data, (map) => FriendApplicationInfo.fromJson(map));
               friendshipManager.listener.friendApplicationRejected(u);
               break;
             case 'onFriendDeleted':
@@ -251,7 +276,8 @@ class IMManager {
           String data = call.arguments['data'];
           switch (type) {
             case 'onRecvCustomBusinessMessage':
-              messageManager.customBusinessListener?.recvCustomBusinessMessage(data);
+              messageManager.customBusinessListener
+                  ?.recvCustomBusinessMessage(data);
               break;
           }
         } else if (call.method == ListenerType.listenerForService) {
@@ -259,24 +285,30 @@ class IMManager {
           String data = call.arguments['data'];
           switch (type) {
             case 'onFriendApplicationAccepted':
-              final u = Utils.toObj(data, (map) => FriendApplicationInfo.fromJson(map));
+              final u = Utils.toObj(
+                  data, (map) => FriendApplicationInfo.fromJson(map));
               _listenerForService?.friendApplicationAccepted(u);
               break;
             case 'onFriendApplicationAdded':
-              final u = Utils.toObj(data, (map) => FriendApplicationInfo.fromJson(map));
+              final u = Utils.toObj(
+                  data, (map) => FriendApplicationInfo.fromJson(map));
               _listenerForService?.friendApplicationAdded(u);
               break;
             case 'onGroupApplicationAccepted':
-              final i = Utils.toObj(data, (map) => GroupApplicationInfo.fromJson(map));
+              final i = Utils.toObj(
+                  data, (map) => GroupApplicationInfo.fromJson(map));
               _listenerForService?.groupApplicationAccepted(i);
               break;
             case 'onGroupApplicationAdded':
-              final i = Utils.toObj(data, (map) => GroupApplicationInfo.fromJson(map));
+              final i = Utils.toObj(
+                  data, (map) => GroupApplicationInfo.fromJson(map));
               _listenerForService?.groupApplicationAdded(i);
               break;
             case 'onRecvNewMessage':
-              final msg = Utils.toObj(data, (map) => Message.fromJson(map));
-              _listenerForService?.recvNewMessage(msg);
+              final messages = _messagesFromCallbackValue(data);
+              for (final msg in messages) {
+                _listenerForService?.recvNewMessage(msg);
+              }
               break;
           }
         } else if (call.method == ListenerType.uploadLogsListener) {
@@ -328,7 +360,8 @@ class IMManager {
               int fileSize = data['fileSize'];
               int streamSize = data['streamSize'];
               int storageSize = data['storageSize'];
-              _uploadFileListener?.uploadProgress(id, fileSize, streamSize, storageSize);
+              _uploadFileListener?.uploadProgress(
+                  id, fileSize, streamSize, storageSize);
               break;
             case 'uploadID':
               String id = data['id'];
@@ -340,15 +373,34 @@ class IMManager {
               int index = data['index'];
               int partSize = data['partSize'];
               String partHash = data['partHash'];
-              _uploadFileListener?.uploadPartComplete(id, index, partSize, partHash);
+              _uploadFileListener?.uploadPartComplete(
+                  id, index, partSize, partHash);
               break;
           }
         }
       } catch (error, stackTrace) {
-        Logger.print("回调失败了。${call.method} ${call.arguments['type']} ${call.arguments['data']} $error $stackTrace");
+        Logger.print(
+            "回调失败了。${call.method} ${call.arguments['type']} ${call.arguments['data']} $error $stackTrace");
       }
       return Future.value(null);
-    });
+    }
+
+    _channel.setMethodCallHandler(handleNativeCallback);
+    MacOSOpenIMBridge.instance.registerEventHandler(handleNativeCallback);
+  }
+
+  List<Message> _messagesFromCallbackValue(String value) {
+    final decoded = Utils.formatJson(value);
+    if (decoded is List) {
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map(Message.fromJson)
+          .toList(growable: false);
+    }
+    if (decoded is Map<String, dynamic>) {
+      return [Message.fromJson(decoded)];
+    }
+    throw FormatException('消息回调数据格式错误: ${decoded.runtimeType}');
   }
 
   Future<bool?> init(
@@ -358,14 +410,24 @@ class IMManager {
   }) {
     _connectListener = listener;
     config.logFilePath ??= config.dataDir;
+    final params = {
+      ...config.toMap(),
+      "operationID": Utils.checkOperationID(operationID),
+    };
+    if (MacOSOpenIMBridge.instance.isSupported) {
+      return (() async {
+        try {
+          final value =
+              await MacOSOpenIMBridge.instance.call('initSDK', params);
+          return value == null ? null : value == true;
+        } catch (error) {
+          throw error;
+        }
+      })();
+    }
     return _channel.invokeMethod(
       'initSDK',
-      _buildParam(
-        {
-          ...config.toMap(),
-          "operationID": Utils.checkOperationID(operationID),
-        },
-      ),
+      _buildParam(params),
     );
   }
 
@@ -391,6 +453,24 @@ class IMManager {
     String? operationID,
   }) {
     _connectListener = listener;
+    final operation = Utils.checkOperationID(operationID);
+    if (MacOSOpenIMBridge.instance.isSupported) {
+      return MacOSOpenIMBridge.instance.call('initSDK', {
+        "platformID": platformID,
+        "apiAddr": apiAddr,
+        "wsAddr": wsAddr,
+        "dataDir": dataDir,
+        "logLevel": logLevel,
+        "isCompression": isCompression,
+        'isNeedEncryption': isNeedEncryption,
+        "isLogStandardOutput": isLogStandardOutput,
+        "logFilePath": logFilePath,
+        'systemType': 'flutter',
+        "operationID": operation,
+      }).then((value) {
+        return value;
+      });
+    }
     return _channel.invokeMethod(
       'initSDK',
       _buildParam(
@@ -405,7 +485,7 @@ class IMManager {
           "isLogStandardOutput": isLogStandardOutput,
           "logFilePath": logFilePath,
           'systemType': 'flutter',
-          "operationID": Utils.checkOperationID(operationID),
+          "operationID": operation,
         },
       ),
     );
@@ -413,6 +493,10 @@ class IMManager {
 
   /// Deinitialize the SDK
   void unInitSDK() {
+    if (MacOSOpenIMBridge.instance.isSupported) {
+      MacOSOpenIMBridge.instance.call('unInitSDK', {});
+      return;
+    }
     _channel.invokeMethod('unInitSDK', _buildParam({}));
   }
 
@@ -433,14 +517,16 @@ class IMManager {
       status = await getLoginStatus();
     }
     if (status != LoginStatus.logging && status != LoginStatus.logged) {
-      await _channel.invokeMethod(
-        'login',
-        _buildParam({
-          'userID': userID,
-          'token': token,
-          'operationID': Utils.checkOperationID(operationID),
-        }),
-      );
+      final params = {
+        'userID': userID,
+        'token': token,
+        'operationID': Utils.checkOperationID(operationID),
+      };
+      if (MacOSOpenIMBridge.instance.isSupported) {
+        await MacOSOpenIMBridge.instance.call('login', params);
+      } else {
+        await _channel.invokeMethod('login', _buildParam(params));
+      }
     }
     this.isLogined = true;
     this.userID = userID;
@@ -459,12 +545,10 @@ class IMManager {
 
   /// Logout
   Future<dynamic> logout({String? operationID}) async {
-    var value = await _channel.invokeMethod(
-      'logout',
-      _buildParam({
-        'operationID': Utils.checkOperationID(operationID),
-      }),
-    );
+    final params = {'operationID': Utils.checkOperationID(operationID)};
+    var value = MacOSOpenIMBridge.instance.isSupported
+        ? await MacOSOpenIMBridge.instance.call('logout', params)
+        : await _channel.invokeMethod('logout', _buildParam(params));
     this.isLogined = false;
     this.token = null;
     return value;
@@ -474,13 +558,18 @@ class IMManager {
   /// 1: logout 2: logging  3: logged
   Future<int?> getLoginStatus({
     String? operationID,
-  }) =>
-      _channel.invokeMethod<int>(
-        'getLoginStatus',
-        _buildParam({
-          'operationID': Utils.checkOperationID(operationID),
-        }),
-      );
+  }) {
+    final params = {'operationID': Utils.checkOperationID(operationID)};
+    if (MacOSOpenIMBridge.instance.isSupported) {
+      return MacOSOpenIMBridge.instance
+          .call('getLoginStatus', params)
+          .then((value) => value is int ? value : int.tryParse('$value'));
+    }
+    return _channel.invokeMethod<int>(
+      'getLoginStatus',
+      _buildParam(params),
+    );
+  }
 
   /// Get the current logged-in user ID
   Future<String> getLoginUserID() async => userID;
@@ -496,18 +585,19 @@ class IMManager {
     String? contentType,
     String? cause,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-        'uploadFile',
-        _buildParam({
-          'id': id,
-          'filePath': filePath,
-          'name': fileName,
-          'contentType': contentType,
-          'cause': cause,
-          'operationID': Utils.checkOperationID(operationID),
-        }),
-      );
+  }) {
+    final params = {
+      'id': id,
+      'filePath': filePath,
+      'name': fileName,
+      'contentType': contentType,
+      'cause': cause,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    return MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('uploadFile', params)
+        : _channel.invokeMethod('uploadFile', _buildParam(params));
+  }
 
   /// Update the Firebase client registration token
   /// [fcmToken] Firebase token
@@ -515,28 +605,33 @@ class IMManager {
     required String fcmToken,
     required int expireTime,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'updateFcmToken',
-          _buildParam({
-            'fcmToken': fcmToken,
-            'expireTime': expireTime,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    final params = {
+      'fcmToken': fcmToken,
+      'expireTime': expireTime,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    if (MacOSOpenIMBridge.instance.isSupported) {
+      return MacOSOpenIMBridge.instance.call('updateFcmToken', params);
+    }
+    return _channel.invokeMethod('updateFcmToken', _buildParam(params));
+  }
 
   /// Upload logs
   Future uploadLogs({
     String? ex,
     int line = 0,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'uploadLogs',
-          _buildParam({
-            'ex': ex,
-            'line': line,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    final params = {
+      'ex': ex,
+      'line': line,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    return MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('uploadLogs', params)
+        : _channel.invokeMethod('uploadLogs', _buildParam(params));
+  }
 
   Future logs({
     int logLevel = 5,
@@ -546,18 +641,26 @@ class IMManager {
     String? err,
     List<dynamic>? keyAndValues,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'logs',
-          _buildParam({
-            'line': line,
-            'logLevel': logLevel,
-            'file': file,
-            'msgs': msgs,
-            'err': err,
-            if (keyAndValues != null) 'keyAndValue': jsonEncode(keyAndValues),
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    final params = {
+      'line': line,
+      'logLevel': logLevel,
+      'file': file,
+      'msgs': msgs,
+      'err': err,
+      if (keyAndValues != null) 'keyAndValue': keyAndValues,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    return MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('logs', params)
+        : _channel.invokeMethod(
+            'logs',
+            _buildParam({
+              ...params,
+              if (keyAndValues != null) 'keyAndValue': jsonEncode(keyAndValues),
+            }),
+          );
+  }
 
   void setUploadLogsListener(OnUploadLogsListener listener) {
     _uploadLogsListener = listener;

@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_openim_sdk/flutter_openim_sdk.dart';
+import 'package:flutter_openim_sdk/src/macos_openim_bridge.dart';
 
 class UserManager {
   MethodChannel _channel;
@@ -10,6 +11,9 @@ class UserManager {
   /// User profile change listener
   Future setUserListener(OnUserListener listener) {
     this.listener = listener;
+    if (MacOSOpenIMBridge.instance.isSupported) {
+      return MacOSOpenIMBridge.instance.call('setUserListener', {});
+    }
     return _channel.invokeMethod('setUserListener', _buildParam({}));
   }
 
@@ -18,27 +22,29 @@ class UserManager {
   Future<List<PublicUserInfo>> getUsersInfo({
     required List<String> userIDList,
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getUsersInfo',
-              _buildParam({
-                'userIDList': userIDList,
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toList(value, (v) => PublicUserInfo.fromJson(v)));
+  }) {
+    final params = {
+      'userIDList': userIDList,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getUsersInfo', params)
+        : _channel.invokeMethod('getUsersInfo', _buildParam(params));
+    return future.then(
+        (value) => Utils.toList(value, (v) => PublicUserInfo.fromJson(v)));
+  }
 
   /// Get information of the currently logged-in user
   Future<UserInfo> getSelfUserInfo({
     String? operationID,
-  }) =>
-      _channel
-          .invokeMethod(
-              'getSelfUserInfo',
-              _buildParam({
-                'operationID': Utils.checkOperationID(operationID),
-              }))
-          .then((value) => Utils.toObj(value, (map) => UserInfo.fromJson(map)));
+  }) {
+    final params = {'operationID': Utils.checkOperationID(operationID)};
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getSelfUserInfo', params)
+        : _channel.invokeMethod('getSelfUserInfo', _buildParam(params));
+    return future
+        .then((value) => Utils.toObj(value, (map) => UserInfo.fromJson(map)));
+  }
 
   /// Modify the profile of the currently logged-in user
   /// [nickname] Nickname
@@ -51,67 +57,80 @@ class UserManager {
     int? globalRecvMsgOpt,
     String? ex,
     String? operationID,
-  }) =>
-      _channel.invokeMethod(
-          'setSelfInfo',
-          _buildParam({
-            'nickname': nickname,
-            'faceURL': faceURL,
-            'globalRecvMsgOpt': globalRecvMsgOpt,
-            'ex': ex,
-            'operationID': Utils.checkOperationID(operationID),
-          }));
+  }) {
+    final params = {
+      'nickname': nickname,
+      'faceURL': faceURL,
+      'globalRecvMsgOpt': globalRecvMsgOpt,
+      'ex': ex,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('setSelfInfo', params)
+        : _channel.invokeMethod('setSelfInfo', _buildParam(params));
+    return future.then((value) => value?.toString());
+  }
 
   Future<List<UserStatusInfo>> subscribeUsersStatus(
     List<String> userIDs, {
     String? operationID,
   }) {
-    return _channel
-        .invokeMethod(
-            'subscribeUsersStatus',
-            _buildParam({
-              'userIDs': userIDs,
-              'operationID': Utils.checkOperationID(operationID),
-            }))
-        .then((value) => Utils.toList(value, (map) => UserStatusInfo.fromJson(map)));
+    final params = {
+      'userIDs': userIDs,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('subscribeUsersStatus', params)
+        : _channel.invokeMethod('subscribeUsersStatus', _buildParam(params));
+    return future.then(
+      (value) => Utils.toList(value, (map) => UserStatusInfo.fromJson(map)),
+    );
   }
 
   Future unsubscribeUsersStatus(
     List<String> userIDs, {
     String? operationID,
   }) {
-    return _channel.invokeMethod(
-        'unsubscribeUsersStatus',
-        _buildParam({
-          'userIDs': userIDs,
-          'operationID': Utils.checkOperationID(operationID),
-        }));
+    final params = {
+      'userIDs': userIDs,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    return MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('unsubscribeUsersStatus', params)
+        : _channel.invokeMethod('unsubscribeUsersStatus', _buildParam(params));
   }
 
   Future<List<UserStatusInfo>> getSubscribeUsersStatus({
     String? operationID,
   }) {
-    return _channel
-        .invokeMethod(
+    final params = {
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getSubscribeUsersStatus', params)
+        : _channel.invokeMethod(
             'getSubscribeUsersStatus',
-            _buildParam({
-              'operationID': Utils.checkOperationID(operationID),
-            }))
-        .then((value) => Utils.toList(value, (map) => UserStatusInfo.fromJson(map)));
+            _buildParam(params),
+          );
+    return future.then(
+      (value) => Utils.toList(value, (map) => UserStatusInfo.fromJson(map)),
+    );
   }
 
   Future<List<UserStatusInfo>> getUserStatus(
     List<String> userIDs, {
     String? operationID,
   }) {
-    return _channel
-        .invokeMethod(
-            'getUserStatus',
-            _buildParam({
-              'userIDs': userIDs,
-              'operationID': Utils.checkOperationID(operationID),
-            }))
-        .then((value) => Utils.toList(value, (map) => UserStatusInfo.fromJson(map)));
+    final params = {
+      'userIDs': userIDs,
+      'operationID': Utils.checkOperationID(operationID),
+    };
+    final future = MacOSOpenIMBridge.instance.isSupported
+        ? MacOSOpenIMBridge.instance.call('getUserStatus', params)
+        : _channel.invokeMethod('getUserStatus', _buildParam(params));
+    return future.then(
+      (value) => Utils.toList(value, (map) => UserStatusInfo.fromJson(map)),
+    );
   }
 
   @Deprecated('Use [getUsersInfo] instead')
@@ -122,8 +141,8 @@ class UserManager {
     return getUsersInfo(userIDList: userIDs, operationID: operationID);
   }
 
-/// Global Do Not Disturb
-/// [status] 0: Normal; 1: Do not accept messages; 2: Accept online messages but not offline messages;
+  /// Global Do Not Disturb
+  /// [status] 0: Normal; 1: Do not accept messages; 2: Accept online messages but not offline messages;
   @Deprecated('use [setSelfInfo] instead')
   Future<dynamic> setGlobalRecvMessageOpt({
     required int status,

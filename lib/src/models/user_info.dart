@@ -68,7 +68,11 @@ class UserInfo {
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UserInfo && runtimeType == other.runtimeType && userID == other.userID;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserInfo &&
+          runtimeType == other.runtimeType &&
+          userID == other.userID;
 
   @override
   int get hashCode => userID.hashCode;
@@ -412,7 +416,9 @@ class UserStatusInfo {
   UserStatusInfo.fromJson(Map<String, dynamic> json) {
     userID = json['userID'];
     status = json['status'];
-    platformIDs = json["platformIDs"] == null ? [] : List<int>.from(json["platformIDs"].map((x) => x));
+    platformIDs = json["platformIDs"] == null
+        ? []
+        : List<int>.from(json["platformIDs"].map((x) => x));
   }
 
   Map<String, dynamic> toJson() {
@@ -436,7 +442,9 @@ class GetFriendApplicationListAsRecipientReq {
   });
 
   GetFriendApplicationListAsRecipientReq.fromJson(Map<String, dynamic> json)
-      : handleResults = json['handleResults'] == null ? [] : List<int>.from(json['handleResults'].map((x) => x)),
+      : handleResults = json['handleResults'] == null
+            ? []
+            : List<int>.from(json['handleResults'].map((x) => x)),
         offset = json['offset'],
         count = json['count'];
 
@@ -485,7 +493,8 @@ class GetFriendApplicationUnhandledCountReq {
 
   GetFriendApplicationUnhandledCountReq({this.time = 0});
 
-  GetFriendApplicationUnhandledCountReq.fromJson(Map<String, dynamic> json) : time = json['time'];
+  GetFriendApplicationUnhandledCountReq.fromJson(Map<String, dynamic> json)
+      : time = json['time'];
 
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{};
