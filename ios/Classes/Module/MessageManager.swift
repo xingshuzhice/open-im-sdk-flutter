@@ -1,10 +1,10 @@
 import Foundation
 import OpenIMCore
 
-public class MessageManager: BaseServiceManager {
+class MessageManager: BaseServiceManager {
     private let KEY_ID: String = "id"
 
-    public override func registerHandlers() {
+    override func registerHandlers() {
         super.registerHandlers()
         self["setAdvancedMsgListener"] = setAdvancedMsgListener
         self["sendMessage"] = sendMessage
@@ -252,7 +252,7 @@ public class MessageManager: BaseServiceManager {
     }
 }
 
-public class SendMsgProgressListener: NSObject, Open_im_sdk_callbackSendMsgCallBackProtocol {
+class SendMsgProgressListener: NSObject, Open_im_sdk_callbackSendMsgCallBackProtocol {
     private let channel: FlutterMethodChannel
     private let result: FlutterResult
     private let call: FlutterMethodCall
@@ -263,11 +263,11 @@ public class SendMsgProgressListener: NSObject, Open_im_sdk_callbackSendMsgCallB
         self.call = methodCall
     }
     
-    public func onError(_ errCode: Int32, errMsg: String?) {
+    func onError(_ errCode: Int32, errMsg: String?) {
         DispatchQueue.main.async { self.result(FlutterError(code: "\(errCode)", message: errMsg, details: nil)) }
     }
     
-    public func onProgress(_ progress: Int) {
+    func onProgress(_ progress: Int) {
         var values: [String: Any] = [:]
         let message = call[dict: "message"]
         values["clientMsgID"] = message["clientMsgID"]
@@ -275,13 +275,13 @@ public class SendMsgProgressListener: NSObject, Open_im_sdk_callbackSendMsgCallB
         CommonUtil.emitEvent(channel: channel, method: "msgSendProgressListener", type: "onProgress", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func onSuccess(_ data: String?) {
+    func onSuccess(_ data: String?) {
         DispatchQueue.main.async { self.result(data) }
     }
     
 }
 
-public class AdvancedMsgListener: NSObject, Open_im_sdk_callbackOnAdvancedMsgListenerProtocol {
+class AdvancedMsgListener: NSObject, Open_im_sdk_callbackOnAdvancedMsgListenerProtocol {
     private let channel: FlutterMethodChannel
     private let id: String
     
@@ -290,42 +290,42 @@ public class AdvancedMsgListener: NSObject, Open_im_sdk_callbackOnAdvancedMsgLis
         self.id = id
     }
     
-    public func onMsgDeleted(_ message: String?) {
+    func onMsgDeleted(_ message: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["message"] = message
         CommonUtil.emitEvent(channel: channel, method: "advancedMsgListener", type: "onMsgDeleted", errCode: nil, errMsg: nil, data: values);
     }
     
-    public func onNewRecvMessageRevoked(_ messageRevoked: String?) {
+    func onNewRecvMessageRevoked(_ messageRevoked: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["messageRevoked"] = messageRevoked
         CommonUtil.emitEvent(channel: channel, method: "advancedMsgListener", type: "onNewRecvMessageRevoked", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func onRecvC2CReadReceipt(_ msgReceiptList: String?) {
+    func onRecvC2CReadReceipt(_ msgReceiptList: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["msgReceiptList"] = msgReceiptList
         CommonUtil.emitEvent(channel: channel, method: "advancedMsgListener", type: "onRecvC2CReadReceipt", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func onRecvNewMessage(_ message: String?) {
+    func onRecvNewMessage(_ message: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["message"] = message
         CommonUtil.emitEvent(channel: channel, method: "advancedMsgListener", type: "onRecvNewMessage", errCode: nil, errMsg: nil, data: values)
     }
 
-    public func onRecvOfflineNewMessage(_ message: String?) {
+    func onRecvOfflineNewMessage(_ message: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["message"] = message
         CommonUtil.emitEvent(channel: channel, method: "advancedMsgListener", type: "onRecvOfflineNewMessage", errCode: nil, errMsg: nil, data: values);
     }
 
-    public func onRecvOnlineOnlyMessage(_ message: String?) {
+    func onRecvOnlineOnlyMessage(_ message: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["message"] = message
@@ -333,14 +333,14 @@ public class AdvancedMsgListener: NSObject, Open_im_sdk_callbackOnAdvancedMsgLis
     }
 }
 
-public class CustomBusinessListener: NSObject, Open_im_sdk_callbackOnCustomBusinessListenerProtocol {
+class CustomBusinessListener: NSObject, Open_im_sdk_callbackOnCustomBusinessListenerProtocol {
     private let channel: FlutterMethodChannel
     
     init(channel: FlutterMethodChannel) {
         self.channel = channel
     }
     
-    public func onRecvCustomBusinessMessage(_ s: String?) {
+    func onRecvCustomBusinessMessage(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "customBusinessListener", type: "onRecvCustomBusinessMessage", errCode: nil, errMsg: nil, data: s)
     }
 }

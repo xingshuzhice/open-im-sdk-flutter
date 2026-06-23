@@ -995,6 +995,14 @@ func dispatch(method string, args map[string]any) bridgeResponse {
 		return callBase(func(cb open_im_sdk_callback.Base) {
 			open_im_sdk.GetGroupMemberOwnerAndAdmin(cb, operationID, stringArg(args, "groupID"))
 		})
+	case "checkLocalGroupFullSync":
+		return callBase(func(cb open_im_sdk_callback.Base) {
+			open_im_sdk.CheckLocalGroupFullSync(cb, operationID)
+		})
+	case "checkGroupMemberFullSync":
+		return callBase(func(cb open_im_sdk_callback.Base) {
+			open_im_sdk.CheckGroupMemberFullSync(cb, operationID, stringArg(args, "groupID"))
+		})
 	case "searchGroupMembers":
 		return callBase(func(cb open_im_sdk_callback.Base) {
 			open_im_sdk.SearchGroupMembers(cb, operationID, jsonStringArg(args, "searchParam"))

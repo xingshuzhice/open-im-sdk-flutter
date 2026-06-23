@@ -1,9 +1,9 @@
 import Foundation
 import OpenIMCore
 
-public class GroupManager: BaseServiceManager {
+class GroupManager: BaseServiceManager {
     
-    public override func registerHandlers() {
+    override func registerHandlers() {
         super.registerHandlers()
         self["acceptGroupApplication"] = acceptGroupApplication
         self["changeGroupMemberMute"] = changeGroupMemberMute
@@ -16,6 +16,8 @@ public class GroupManager: BaseServiceManager {
         self["getGroupMemberListByJoinTimeFilter"] = getGroupMemberListByJoinTimeFilter
         self["getGroupMemberOwnerAndAdmin"] = getGroupMemberOwnerAndAdmin
         self["getGroupMembersInfo"] = getGroupMembersInfo
+        self["checkLocalGroupFullSync"] = checkLocalGroupFullSync
+        self["checkGroupMemberFullSync"] = checkGroupMemberFullSync
         self["getGroupsInfo"] = getGroupsInfo
         self["getJoinedGroupList"] = getJoinedGroupList
         self["getJoinedGroupListPage"] = getJoinedGroupListPage
@@ -78,6 +80,14 @@ public class GroupManager: BaseServiceManager {
 
     func getGroupMembersInfo(methodCall: FlutterMethodCall, result: @escaping FlutterResult) {
         Open_im_sdkGetSpecifiedGroupMembersInfo(BaseCallback(result: result), methodCall[string: "operationID"], methodCall[string: "groupID"], methodCall[jsonString: "userIDList"])
+    }
+
+    func checkLocalGroupFullSync(methodCall: FlutterMethodCall, result: @escaping FlutterResult) {
+        result(FlutterError(code: "1002", message: "当前 iOS OpenIMSDKCore 未暴露 CheckLocalGroupFullSync", details: nil))
+    }
+
+    func checkGroupMemberFullSync(methodCall: FlutterMethodCall, result: @escaping FlutterResult) {
+        result(FlutterError(code: "1002", message: "当前 iOS OpenIMSDKCore 未暴露 CheckGroupMemberFullSync", details: nil))
     }
 
     func getGroupsInfo(methodCall: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -154,7 +164,7 @@ public class GroupManager: BaseServiceManager {
     }
 }
 
-public class GroupListener: NSObject, Open_im_sdk_callbackOnGroupListenerProtocol {
+class GroupListener: NSObject, Open_im_sdk_callbackOnGroupListenerProtocol {
   
     private let channel: FlutterMethodChannel
     
@@ -162,47 +172,47 @@ public class GroupListener: NSObject, Open_im_sdk_callbackOnGroupListenerProtoco
         self.channel = channel
     }
   
-    public func onGroupApplicationAccepted(_ s: String?) {
+    func onGroupApplicationAccepted(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onGroupApplicationAccepted", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onGroupApplicationAdded(_ s: String?) {
+    func onGroupApplicationAdded(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onGroupApplicationAdded", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onGroupApplicationDeleted(_ s: String?) {
+    func onGroupApplicationDeleted(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onGroupApplicationDeleted", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onGroupApplicationRejected(_ s: String?) {
+    func onGroupApplicationRejected(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onGroupApplicationRejected", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onGroupDismissed(_ s: String?) {
+    func onGroupDismissed(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onGroupDismissed", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onGroupInfoChanged(_ s: String?) {
+    func onGroupInfoChanged(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onGroupInfoChanged", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onGroupMemberAdded(_ s: String?) {
+    func onGroupMemberAdded(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onGroupMemberAdded", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onGroupMemberDeleted(_ s: String?) {
+    func onGroupMemberDeleted(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onGroupMemberDeleted", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onGroupMemberInfoChanged(_ s: String?) {
+    func onGroupMemberInfoChanged(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onGroupMemberInfoChanged", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onJoinedGroupAdded(_ s: String?) {
+    func onJoinedGroupAdded(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onJoinedGroupAdded", errCode: nil, errMsg: nil, data: s)
     }
 
-    public func onJoinedGroupDeleted(_ s: String?) {
+    func onJoinedGroupDeleted(_ s: String?) {
         CommonUtil.emitEvent(channel: channel, method: "groupListener", type: "onJoinedGroupDeleted", errCode: nil, errMsg: nil, data: s)
     }
 }

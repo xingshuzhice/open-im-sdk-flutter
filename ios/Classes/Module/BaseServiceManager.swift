@@ -1,19 +1,18 @@
 import Flutter
-import OpenIMCore
 import UIKit
 
-public typealias ImHandler = (_ methodCall: FlutterMethodCall, _ result: @escaping FlutterResult) -> Void
+typealias ImHandler = (_ methodCall: FlutterMethodCall, _ result: @escaping FlutterResult) -> Void
 
-open class BaseServiceManager {
-    public let channel: FlutterMethodChannel
+class BaseServiceManager {
+    let channel: FlutterMethodChannel
     private var methodHandlers: [String: ImHandler] = [:]
     
-    public init(channel: FlutterMethodChannel) {
+    init(channel: FlutterMethodChannel) {
         self.channel = channel
         self.registerHandlers()
     }
     
-    public func handleMethod(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    func handleMethod(call: FlutterMethodCall, result: @escaping FlutterResult) {
         let method: String = call.method
         guard let handler = methodHandlers[method] else {
             print("Handle MethodName Error: \(typeName(self))'s method: [\(method)] not found")
@@ -22,7 +21,7 @@ open class BaseServiceManager {
         handler(call, result)
     }
     
-    public subscript(_ key: String) -> ImHandler? {
+    subscript(_ key: String) -> ImHandler? {
         get {
             methodHandlers[key]
         }
@@ -31,11 +30,11 @@ open class BaseServiceManager {
         }
     }
     
-    public func registerHandlers() {
+    func registerHandlers() {
         
     }
     
-    public func callBack(_ result: @escaping FlutterResult, _ content: Any? = nil) {
+    func callBack(_ result: @escaping FlutterResult, _ content: Any? = nil) {
         safeMainAsync {
             result(content)
         }

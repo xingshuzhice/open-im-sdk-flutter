@@ -1,9 +1,9 @@
 import Foundation
 import OpenIMCore
 
-public class ConversationManager: BaseServiceManager {
+class ConversationManager: BaseServiceManager {
 
-    public override func registerHandlers() {
+    override func registerHandlers() {
         super.registerHandlers()
         self["changeInputStates"] = changeInputStates
         self["clearConversationAndDeleteAllMsg"] = clearConversationAndDeleteAllMsg
@@ -105,7 +105,7 @@ public class ConversationManager: BaseServiceManager {
     }
 }
 
-public class ConversationListener: NSObject, Open_im_sdk_callbackOnConversationListenerProtocol {
+class ConversationListener: NSObject, Open_im_sdk_callbackOnConversationListenerProtocol {
 
     private let channel: FlutterMethodChannel
 
@@ -113,35 +113,35 @@ public class ConversationListener: NSObject, Open_im_sdk_callbackOnConversationL
         self.channel = channel
     }
 
-    public func onConversationChanged(_ conversationList: String?) {
+    func onConversationChanged(_ conversationList: String?) {
         CommonUtil.emitEvent(channel: channel, method: "conversationListener", type: "onConversationChanged", errCode: nil, errMsg: nil, data: conversationList)
     }
 
-    public func onConversationUserInputStatusChanged(_ change: String?) {
+    func onConversationUserInputStatusChanged(_ change: String?) {
         CommonUtil.emitEvent(channel: channel, method: "conversationListener", type: "onConversationUserInputStatusChanged", errCode: nil, errMsg: nil, data: change)
     }
 
-    public func onNewConversation(_ conversationList: String?) {
+    func onNewConversation(_ conversationList: String?) {
         CommonUtil.emitEvent(channel: channel, method: "conversationListener", type: "onNewConversation", errCode: nil, errMsg: nil, data: conversationList)
     }
 
-    public func onSyncServerFailed(_ reinstalled: Bool) {
+    func onSyncServerFailed(_ reinstalled: Bool) {
         CommonUtil.emitEvent(channel: channel, method: "conversationListener", type: "onSyncServerFailed", errCode: nil, errMsg: nil, data: reinstalled)
     }
 
-    public func onSyncServerFinish(_ reinstalled: Bool) {
+    func onSyncServerFinish(_ reinstalled: Bool) {
         CommonUtil.emitEvent(channel: channel, method: "conversationListener", type: "onSyncServerFinish", errCode: nil, errMsg: nil, data: reinstalled)
     }
 
-    public func onSyncServerProgress(_ progress: Int) {
+    func onSyncServerProgress(_ progress: Int) {
         CommonUtil.emitEvent(channel: channel, method: "conversationListener", type: "onSyncServerProgress", errCode: nil, errMsg: nil, data: progress)
     }
 
-    public func onSyncServerStart(_ reinstalled: Bool) {
+    func onSyncServerStart(_ reinstalled: Bool) {
         CommonUtil.emitEvent(channel: channel, method: "conversationListener", type: "onSyncServerStart", errCode: nil, errMsg: nil, data: reinstalled)
     }
 
-    public func onTotalUnreadMessageCountChanged(_ totalUnreadCount: Int32) {
+    func onTotalUnreadMessageCountChanged(_ totalUnreadCount: Int32) {
         CommonUtil.emitEvent(channel: channel, method: "conversationListener", type: "onTotalUnreadMessageCountChanged", errCode: nil, errMsg: nil, data: totalUnreadCount)
     }
 }

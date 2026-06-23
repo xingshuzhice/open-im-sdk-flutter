@@ -1,9 +1,9 @@
 import Foundation
 import OpenIMCore
 
-public class FriendshipManager: BaseServiceManager {
+class FriendshipManager: BaseServiceManager {
     
-    public override func registerHandlers() {
+    override func registerHandlers() {
         super.registerHandlers()
         self["acceptFriendApplication"] = acceptFriendApplication
         self["addBlacklist"] = addBlacklist
@@ -94,46 +94,46 @@ public class FriendshipManager: BaseServiceManager {
     }   
 }
 
-public class FriendshipListener: NSObject, Open_im_sdk_callbackOnFriendshipListenerProtocol {
+class FriendshipListener: NSObject, Open_im_sdk_callbackOnFriendshipListenerProtocol {
     private let channel:FlutterMethodChannel
     
     init(channel:FlutterMethodChannel) {
         self.channel = channel
     }
     
-    public func onBlackAdded(_ blackInfo: String?) {
+    func onBlackAdded(_ blackInfo: String?) {
         CommonUtil.emitEvent(channel: channel, method: "friendListener", type: "onBlackAdded", errCode: nil, errMsg: nil, data: blackInfo)
     }
     
-    public func onBlackDeleted(_ blackInfo: String?) {
+    func onBlackDeleted(_ blackInfo: String?) {
         CommonUtil.emitEvent(channel: channel, method: "friendListener", type: "onBlackDeleted", errCode: nil, errMsg: nil, data: blackInfo)
     }
     
-    public func onFriendAdded(_ friendInfo: String?) {
+    func onFriendAdded(_ friendInfo: String?) {
         CommonUtil.emitEvent(channel: channel, method: "friendListener", type: "onFriendAdded", errCode: nil, errMsg: nil, data: friendInfo)
     }
     
-    public func onFriendApplicationAccepted(_ friendApplication: String?) {
+    func onFriendApplicationAccepted(_ friendApplication: String?) {
         CommonUtil.emitEvent(channel: channel, method: "friendListener", type: "onFriendApplicationAccepted", errCode: nil, errMsg: nil, data: friendApplication)
     }
     
-    public func onFriendApplicationAdded(_ friendApplication: String?) {
+    func onFriendApplicationAdded(_ friendApplication: String?) {
         CommonUtil.emitEvent(channel: channel, method: "friendListener", type: "onFriendApplicationAdded", errCode: nil, errMsg: nil, data: friendApplication)
     }
     
-    public func onFriendApplicationDeleted(_ friendApplication: String?) {
+    func onFriendApplicationDeleted(_ friendApplication: String?) {
         CommonUtil.emitEvent(channel: channel, method: "friendListener", type: "onFriendApplicationDeleted", errCode: nil, errMsg: nil, data: friendApplication)
     }
     
-    public func onFriendApplicationRejected(_ friendApplication: String?) {
+    func onFriendApplicationRejected(_ friendApplication: String?) {
         CommonUtil.emitEvent(channel: channel, method: "friendListener", type: "onFriendApplicationRejected", errCode: nil, errMsg: nil, data: friendApplication)
     }
     
-    public func onFriendDeleted(_ friendInfo: String?) {
+    func onFriendDeleted(_ friendInfo: String?) {
         CommonUtil.emitEvent(channel: channel, method: "friendListener", type: "onFriendDeleted", errCode: nil, errMsg: nil, data: friendInfo)
     }
     
-    public func onFriendInfoChanged(_ friendInfo: String?) {
+    func onFriendInfoChanged(_ friendInfo: String?) {
         CommonUtil.emitEvent(channel: channel, method: "friendListener", type: "onFriendInfoChanged", errCode: nil, errMsg: nil, data: friendInfo)
     }
 }

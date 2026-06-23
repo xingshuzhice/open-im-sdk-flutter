@@ -647,6 +647,24 @@ class GroupManager {
         'operationID': Utils.checkOperationID(operationID),
       }).then((value) => value is int ? value : int.parse('$value'));
 
+  /// Check whether the local joined-group cache is fully synchronized.
+  Future<bool> checkLocalGroupFullSync({String? operationID}) {
+    return _invoke('checkLocalGroupFullSync', {
+      'operationID': Utils.checkOperationID(operationID),
+    }).then((value) => value == true || value == 'true');
+  }
+
+  /// Check whether the local member cache of [groupID] is fully synchronized.
+  Future<bool> checkGroupMemberFullSync({
+    required String groupID,
+    String? operationID,
+  }) {
+    return _invoke('checkGroupMemberFullSync', {
+      'groupID': groupID,
+      'operationID': Utils.checkOperationID(operationID),
+    }).then((value) => value == true || value == 'true');
+  }
+
   Future<dynamic> _invoke(String method, Map<String, dynamic> params) {
     return MacOSOpenIMBridge.instance.isSupported
         ? MacOSOpenIMBridge.instance.call(method, params)

@@ -8,15 +8,15 @@
 import Foundation
 import Flutter
 
-public protocol Stringable {
+protocol Stringable {
     var rawValue: String { get }
 }
 
 extension String: Stringable {
-    public var rawValue: String { self }
+    var rawValue: String { self }
 }
 
-public extension FlutterMethodCall {
+extension FlutterMethodCall {
     subscript(_ key: Stringable) -> Any? {
         guard let params = self.arguments as? [String: Any] else {
             return nil

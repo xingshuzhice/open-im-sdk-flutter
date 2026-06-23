@@ -1,11 +1,11 @@
 import Foundation
 import OpenIMCore
 
-public class IMMananger: BaseServiceManager {
+class IMMananger: BaseServiceManager {
     
     let reachability = try? Reachability()
     
-    public override func registerHandlers() {
+    override func registerHandlers() {
         super.registerHandlers()
         self["initSDK"] = initSDK
         self["unInitSDK"] = unInitSDK
@@ -109,8 +109,8 @@ public class IMMananger: BaseServiceManager {
     }
 }
 
-public class ConnListener: NSObject, Open_im_sdk_callbackOnConnListenerProtocol {
-    public func onUserTokenInvalid(_ errMsg: String?) {
+class ConnListener: NSObject, Open_im_sdk_callbackOnConnListenerProtocol {
+    func onUserTokenInvalid(_ errMsg: String?) {
         CommonUtil.emitEvent(channel: self.channel, method: "connectListener", type: "onUserTokenInvalid", errCode: nil, errMsg: errMsg, data: nil)
     }
     
@@ -120,29 +120,29 @@ public class ConnListener: NSObject, Open_im_sdk_callbackOnConnListenerProtocol 
         self.channel = channel
     }
     
-    public func onConnectFailed(_ errCode: Int32, errMsg: String?) {
+    func onConnectFailed(_ errCode: Int32, errMsg: String?) {
         CommonUtil.emitEvent(channel: self.channel, method: "connectListener", type: "onConnectFailed", errCode: errCode, errMsg: errMsg, data: nil)
     }
     
-    public func onConnectSuccess() {
+    func onConnectSuccess() {
         CommonUtil.emitEvent(channel: self.channel, method: "connectListener", type: "onConnectSuccess", errCode: nil, errMsg: nil, data: nil)
     }
     
-    public func onConnecting() {
+    func onConnecting() {
         CommonUtil.emitEvent(channel: self.channel, method: "connectListener", type: "onConnecting", errCode: nil, errMsg: nil, data: nil)
     }
     
-    public func onKickedOffline() {
+    func onKickedOffline() {
         CommonUtil.emitEvent(channel: self.channel, method: "connectListener", type: "onKickedOffline", errCode: nil, errMsg: nil, data: nil)
     }
     
-    public func onUserTokenExpired() {
+    func onUserTokenExpired() {
         CommonUtil.emitEvent(channel: self.channel, method: "connectListener", type: "onUserTokenExpired", errCode: nil, errMsg: nil, data: nil)
     }
 }
 
 
-public class UploadLogsListener: NSObject, Open_im_sdk_callbackUploadLogProgressProtocol {
+class UploadLogsListener: NSObject, Open_im_sdk_callbackUploadLogProgressProtocol {
 
     private let channel:FlutterMethodChannel
 
@@ -150,7 +150,7 @@ public class UploadLogsListener: NSObject, Open_im_sdk_callbackUploadLogProgress
         self.channel = channel
     }
 
-    public func onProgress(_ current: Int64, size: Int64) {
+    func onProgress(_ current: Int64, size: Int64) {
             var values: [String: Any] = [:]
             values["current"] = current
             values["size"] = size
@@ -158,7 +158,7 @@ public class UploadLogsListener: NSObject, Open_im_sdk_callbackUploadLogProgress
         }
  }
 
-public class UploadFileListener: NSObject, Open_im_sdk_callbackUploadFileCallbackProtocol {
+class UploadFileListener: NSObject, Open_im_sdk_callbackUploadFileCallbackProtocol {
     
     private let channel:FlutterMethodChannel
     private let id: String
@@ -167,7 +167,7 @@ public class UploadFileListener: NSObject, Open_im_sdk_callbackUploadFileCallbac
         self.channel = channel
         self.id = id
     }
-    public func complete(_ size: Int64, url: String?, typ: Int) {
+    func complete(_ size: Int64, url: String?, typ: Int) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["size"] = size
@@ -176,7 +176,7 @@ public class UploadFileListener: NSObject, Open_im_sdk_callbackUploadFileCallbac
         CommonUtil.emitEvent(channel: channel, method: "uploadFileListener", type: "complete", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func hashPartComplete(_ partsHash: String?, fileHash: String?) {
+    func hashPartComplete(_ partsHash: String?, fileHash: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["partHash"] = partsHash
@@ -184,7 +184,7 @@ public class UploadFileListener: NSObject, Open_im_sdk_callbackUploadFileCallbac
         CommonUtil.emitEvent(channel: channel, method: "uploadFileListener", type: "hashPartComplete", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func hashPartProgress(_ index: Int, size: Int64, partHash: String?) {
+    func hashPartProgress(_ index: Int, size: Int64, partHash: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["index"] = index
@@ -193,14 +193,14 @@ public class UploadFileListener: NSObject, Open_im_sdk_callbackUploadFileCallbac
         CommonUtil.emitEvent(channel: channel, method: "uploadFileListener", type: "hashPartProgress", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func open(_ size: Int64) {
+    func open(_ size: Int64) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["size"] = size
         CommonUtil.emitEvent(channel: channel, method: "uploadFileListener", type: "open", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func partSize(_ partSize: Int64, num: Int) {
+    func partSize(_ partSize: Int64, num: Int) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["partSize"] = partSize
@@ -208,7 +208,7 @@ public class UploadFileListener: NSObject, Open_im_sdk_callbackUploadFileCallbac
         CommonUtil.emitEvent(channel: channel, method: "uploadFileListener", type: "partSize", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func uploadComplete(_ fileSize: Int64, streamSize: Int64, storageSize: Int64) {
+    func uploadComplete(_ fileSize: Int64, streamSize: Int64, storageSize: Int64) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["fileSize"] = fileSize
@@ -217,14 +217,14 @@ public class UploadFileListener: NSObject, Open_im_sdk_callbackUploadFileCallbac
         CommonUtil.emitEvent(channel: channel, method: "uploadFileListener", type: "uploadProgress", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func uploadID(_ uploadID: String?) {
+    func uploadID(_ uploadID: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["uploadID"] = uploadID
         CommonUtil.emitEvent(channel: channel, method: "uploadFileListener", type: "uploadID", errCode: nil, errMsg: nil, data: values)
     }
     
-    public func uploadPartComplete(_ index: Int, partSize: Int64, partHash: String?) {
+    func uploadPartComplete(_ index: Int, partSize: Int64, partHash: String?) {
         var values: [String: Any] = [:]
         values["id"] = id
         values["index"] = index

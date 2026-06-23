@@ -1,8 +1,8 @@
 import Foundation
 
-public class JsonUtil {
+class JsonUtil {
     
-    public static func toString(object: AnyObject?)->String {
+    static func toString(object: AnyObject?)->String {
         
         if object is NSNull {
             return ""

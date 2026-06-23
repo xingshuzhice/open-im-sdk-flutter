@@ -249,4 +249,19 @@ public class GroupManager extends BaseManager {
                 jsonValue(methodCall, "req")
         );
     }
+
+    public void checkLocalGroupFullSync(MethodCall methodCall, MethodChannel.Result result) {
+        Open_im_sdk.checkLocalGroupFullSync(
+                new OnBaseListener(result, methodCall),
+                value(methodCall, "operationID")
+        );
+    }
+
+    public void checkGroupMemberFullSync(MethodCall methodCall, MethodChannel.Result result) {
+        Open_im_sdk.checkGroupMemberFullSync(
+                new OnBaseListener(result, methodCall),
+                value(methodCall, "operationID"),
+                value(methodCall, "groupID")
+        );
+    }
 }

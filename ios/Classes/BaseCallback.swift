@@ -1,7 +1,7 @@
 import Foundation
 import OpenIMCore
 
-public class BaseCallback: NSObject, Open_im_sdk_callbackBaseProtocol {
+class BaseCallback: NSObject, Open_im_sdk_callbackBaseProtocol {
     
     private let result:FlutterResult
     
@@ -9,12 +9,12 @@ public class BaseCallback: NSObject, Open_im_sdk_callbackBaseProtocol {
         self.result = result
     }
     
-    public func onError(_ errCode: Int32, errMsg: String?) {
+    func onError(_ errCode: Int32, errMsg: String?) {
         print("BaseResult: " + errMsg!)
         safeMainAsync { self.result(FlutterError(code: "\(errCode)", message: errMsg, details: nil)) }
     }
     
-    public func onSuccess(_ data: String?) {
+    func onSuccess(_ data: String?) {
         safeMainAsync { self.result(data) }
     }
 }

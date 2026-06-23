@@ -1,9 +1,9 @@
 import Foundation
 
 
-public class CommonUtil {
+class CommonUtil {
     
-    public static func emitEvent(channel: FlutterMethodChannel, method: String, type: String, errCode: Int32?, errMsg: String?, data: Any?){
+    static func emitEvent(channel: FlutterMethodChannel, method: String, type: String, errCode: Int32?, errMsg: String?, data: Any?){
         safeMainAsync {
             var res: [String: Any] = [:]
             res["type"] = type

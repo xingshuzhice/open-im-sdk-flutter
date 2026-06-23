@@ -1,9 +1,9 @@
 import Foundation
 import OpenIMCore
 
-public class UserManager: BaseServiceManager {
+class UserManager: BaseServiceManager {
 
-  public override func registerHandlers() {
+  override func registerHandlers() {
         super.registerHandlers()
         self["setUserListener"] = setUserListener
         self["getUsersInfo"] = getUsersInfo
@@ -49,16 +49,16 @@ public class UserManager: BaseServiceManager {
     }
 }
 
-public class UserListener: NSObject, Open_im_sdk_callbackOnUserListenerProtocol {
-    public func onUserCommandAdd(_ userCommand: String?) {
+class UserListener: NSObject, Open_im_sdk_callbackOnUserListenerProtocol {
+    func onUserCommandAdd(_ userCommand: String?) {
         CommonUtil.emitEvent(channel: self.channel, method: "userListener", type: "onUserCommandAdd", errCode: nil, errMsg: nil, data: userCommand)
     }
     
-    public func onUserCommandDelete(_ userCommand: String?) {
+    func onUserCommandDelete(_ userCommand: String?) {
         CommonUtil.emitEvent(channel: self.channel, method: "userListener", type: "onUserCommandDelete", errCode: nil, errMsg: nil, data: userCommand)
     }
     
-    public func onUserCommandUpdate(_ userCommand: String?) {
+    func onUserCommandUpdate(_ userCommand: String?) {
         CommonUtil.emitEvent(channel: self.channel, method: "userListener", type: "onUserCommandUpdate", errCode: nil, errMsg: nil, data: userCommand)
     }
     
@@ -69,11 +69,11 @@ public class UserListener: NSObject, Open_im_sdk_callbackOnUserListenerProtocol 
         self.channel = channel
     }
     
-    public func onSelfInfoUpdated(_ userInfo: String?) {
+    func onSelfInfoUpdated(_ userInfo: String?) {
         CommonUtil.emitEvent(channel: self.channel, method: "userListener", type: "onSelfInfoUpdated", errCode: nil, errMsg: nil, data: userInfo)
     }
     
-    public func onUserStatusChanged(_ statusInfo: String?) {
+    func onUserStatusChanged(_ statusInfo: String?) {
         CommonUtil.emitEvent(channel: self.channel, method: "userListener", type: "onUserStatusChanged", errCode: nil, errMsg: nil, data: statusInfo)
     }
 
